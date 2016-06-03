@@ -410,7 +410,7 @@ module Puppet::Environments
     # Also clears caches in Settings that may prevent the entry from being updated
     def evict_if_expired(name)
       if (result = @cache[name]) && (result.expired? || @cache_expiration_service.expired?(name))
-        @cache.delete(name).evict!
+        @cache.delete(name)
         @cache_expiration_service.evicted(name)
 
         Puppet.settings.clear_environment_settings(name)
@@ -429,8 +429,6 @@ module Puppet::Environments
         false
       end
 
-      def evict!
-      end
     end
 
     # Always evicting entry
@@ -455,23 +453,21 @@ module Puppet::Environments
     class FileMtimeEntry < Entry
       def initialize(value, path)
         super value
-        @mtime   = Time.now
-        @evicted = false
-        @thread  = Thread.new do
-          loop do
-            @evicted = File.mtime(path) > @mtime rescue true
-            sleep 10
-          end
-        end
+        @mtime = File.mtime(path)
+        @check_mtime = Time.now + 10
       end
 
       def evicted?
-        @evicted
+        if Time.now > @check_mtime
+          new_mtime = File.mtime(path)
+          @check_mtime = Time.now + 10
+
+          new_mtime > @mtime
+        else
+          false
+        end
       end
 
-      def evict!
-        @thread.exit
-      end
     end
   end
 end
