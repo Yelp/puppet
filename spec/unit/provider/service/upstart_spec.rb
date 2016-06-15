@@ -24,7 +24,8 @@ describe Puppet::Type.type(:service).provider(:upstart) do
 
   it "should be the default provider on Ubuntu" do
     Facter.expects(:value).with(:operatingsystem).returns("Ubuntu")
-    described_class.default?.should be_true
+    Facter.expects(:value).with(:operatingsystemmajrelease).returns("12.04")
+    expect(described_class.default?).to be_truthy
   end
 
   describe "excluding services" do

@@ -52,6 +52,61 @@ describe Puppet::Type.type(:service).provider(:systemd) do
     end
   end
 
+  it "should be the default provider on sles12" do
+    Facter.expects(:value).with(:osfamily).at_least_once.returns(:suse)
+    Facter.expects(:value).with(:operatingsystemmajrelease).at_least_once.returns("12")
+    expect(described_class.default?).to be_truthy
+  end
+
+  it "should be the default provider on opensuse13" do
+    Facter.expects(:value).with(:osfamily).at_least_once.returns(:suse)
+    Facter.expects(:value).with(:operatingsystemmajrelease).at_least_once.returns("13")
+    expect(described_class.default?).to be_truthy
+  end
+
+  it "should not be the default provider on sles11" do
+    Facter.expects(:value).with(:osfamily).at_least_once.returns(:suse)
+    Facter.expects(:value).with(:operatingsystem).at_least_once.returns(:suse)
+    Facter.expects(:value).with(:operatingsystemmajrelease).at_least_once.returns("11")
+    expect(described_class.default?).not_to be_truthy
+  end
+
+  it "should not be the default provider on debian7" do
+    Facter.expects(:value).with(:osfamily).at_least_once.returns(:debian)
+    Facter.expects(:value).with(:operatingsystem).at_least_once.returns(:debian)
+    Facter.expects(:value).with(:operatingsystemmajrelease).at_least_once.returns("7")
+    expect(described_class.default?).not_to be_truthy
+  end
+
+  it "should be the default provider on debian8" do
+    Facter.expects(:value).with(:osfamily).at_least_once.returns(:debian)
+    Facter.expects(:value).with(:operatingsystem).at_least_once.returns(:debian)
+    Facter.expects(:value).with(:operatingsystemmajrelease).at_least_once.returns("8")
+    expect(described_class.default?).to be_truthy
+  end
+
+  it "should not be the default provider on ubuntu14.04" do
+    Facter.expects(:value).with(:osfamily).at_least_once.returns(:debian)
+    Facter.expects(:value).with(:operatingsystem).at_least_once.returns(:ubuntu)
+    Facter.expects(:value).with(:operatingsystemmajrelease).at_least_once.returns("14.04")
+    expect(described_class.default?).not_to be_truthy
+  end
+
+  it "should be the default provider on ubuntu15.04" do
+    Facter.expects(:value).with(:osfamily).at_least_once.returns(:debian)
+    Facter.expects(:value).with(:operatingsystem).at_least_once.returns(:ubuntu)
+    Facter.expects(:value).with(:operatingsystemmajrelease).at_least_once.returns("15.04")
+    expect(described_class.default?).to be_truthy
+  end
+
+
+  it "should be the default provider on ubuntu16.04" do
+    Facter.stubs(:value).with(:osfamily).returns(:debian)
+    Facter.stubs(:value).with(:operatingsystem).returns(:ubuntu)
+    Facter.stubs(:value).with(:operatingsystemmajrelease).returns("16.04")
+    expect(described_class).to be_default
+  end
+
   [:enabled?, :enable, :disable, :start, :stop, :status, :restart].each do |method|
     it "should have a #{method} method" do
       provider.should respond_to(method)
@@ -106,20 +161,57 @@ describe Puppet::Type.type(:service).provider(:systemd) do
   describe "#enabled?" do
     it "should return :true if the service is enabled" do
       provider = described_class.new(Puppet::Type.type(:service).new(:name => 'sshd.service'))
-      provider.expects(:systemctl).with('is-enabled', 'sshd.service').returns 'enabled'
-      provider.enabled?.should == :true
+      provider.expects(:systemctl).with(
+        'show',
+        'sshd.service',
+        '--property', 'LoadState',
+        '--property', 'UnitFileState',
+        '--no-pager'
+      ).returns "LoadState=loaded\nUnitFileState=enabled\n"
+      expect(provider.enabled?).to eq(:true)
     end
 
     it "should return :false if the service is disabled" do
       provider = described_class.new(Puppet::Type.type(:service).new(:name => 'sshd.service'))
-      provider.expects(:systemctl).with('is-enabled', 'sshd.service').raises Puppet::ExecutionFailure, "Execution of '/bin/systemctl is-enabled sshd.service' returned 1: disabled"
-      provider.enabled?.should == :false
+      provider.expects(:systemctl).with(
+        'show',
+        'sshd.service',
+        '--property', 'LoadState',
+        '--property', 'UnitFileState',
+        '--no-pager'
+      ).returns "LoadState=loaded\nUnitFileState=disabled\n"
+      expect(provider.enabled?).to eq(:false)
+    end
+
+    it "should return :false if the service is masked and the resource is attempting to be disabled" do
+      provider = described_class.new(Puppet::Type.type(:service).new(:name => 'sshd.service', :enable => false))
+      provider.expects(:systemctl).with(
+        'show',
+        'sshd.service',
+        '--property', 'LoadState',
+        '--property', 'UnitFileState',
+        '--no-pager'
+      ).returns "LoadState=masked\nUnitFileState=\n"
+      expect(provider.enabled?).to eq(:false)
+    end
+
+    it "should return :mask if the service is masked and the resource is attempting to be masked" do
+      provider = described_class.new(Puppet::Type.type(:service).new(:name => 'sshd.service', :enable => 'mask'))
+      provider.expects(:systemctl).with(
+        'show',
+        'sshd.service',
+        '--property', 'LoadState',
+        '--property', 'UnitFileState',
+        '--no-pager'
+      ).returns "LoadState=masked\nUnitFileState=\n"
+      expect(provider.enabled?).to eq(:mask)
     end
   end
 
   describe "#enable" do
     it "should run systemctl enable to enable a service" do
       provider = described_class.new(Puppet::Type.type(:service).new(:name => 'sshd.service'))
+      provider.expects(:systemctl).with('unmask', 'sshd.service')
       provider.expects(:systemctl).with('enable', 'sshd.service')
       provider.enable
     end
@@ -130,6 +222,18 @@ describe Puppet::Type.type(:service).provider(:systemd) do
       provider = described_class.new(Puppet::Type.type(:service).new(:name => 'sshd.service'))
       provider.expects(:systemctl).with(:disable, 'sshd.service')
       provider.disable
+    end
+  end
+
+  describe "#mask" do
+    it "should run systemctl to disable and mask a service" do
+      provider = described_class.new(Puppet::Type.type(:service).new(:name => 'sshd.service'))
+      # :disable is the only call in the provider that uses a symbol instead of
+      # a string.
+      # This should be made consistent in the future and all tests updated.
+      provider.expects(:systemctl).with(:disable, 'sshd.service')
+      provider.expects(:systemctl).with('mask', 'sshd.service')
+      provider.mask
     end
   end
 

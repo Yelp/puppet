@@ -16,7 +16,7 @@ Puppet::Type.type(:service).provide :upstart, :parent => :debian do
     (Facter.value(:osfamily) == 'RedHat' and Facter.value(:operatingsystemrelease) =~ /^6\./),
   ]
 
-  defaultfor :operatingsystem => :ubuntu
+  defaultfor :operatingsystem => :ubuntu, :operatingsystemmajrelease => ["10.04", "12.04", "14.04", "14.10"]
 
   commands :start   => "/sbin/start",
            :stop    => "/sbin/stop",
