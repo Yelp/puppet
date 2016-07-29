@@ -312,6 +312,8 @@ module Puppet::Environments
 
       # Infinity since it there are no entries, this is a cache of the first to expire time
       @next_expiration = END_OF_TIME
+
+      @cache_conf = {}
     end
 
     # @!macro loader_list
@@ -358,6 +360,7 @@ module Puppet::Environments
     # (The intention is that this could be used from a MANUAL cache eviction command (TBD)
     def clear(name)
       @cache.delete(name)
+      @cache_conf.delete(name)
     end
 
     # Clears all cached environments.
@@ -365,6 +368,7 @@ module Puppet::Environments
     def clear_all()
       super
       @cache = {}
+      @cache_conf = {}
       @expirations.clear
       @next_expiration = END_OF_TIME
     end
@@ -396,7 +400,7 @@ module Puppet::Environments
     # @!macro loader_get_conf
     def get_conf(name)
       evict_if_expired(name)
-      @loader.get_conf(name)
+      @cache_conf.fetch(name) { @cache_conf[name] = @loader.get_conf(name) }
     end
 
     # Creates a suitable cache entry given the time to live for one environment
@@ -419,6 +423,7 @@ module Puppet::Environments
       if (result = @cache[name]) && (result.expired? || @cache_expiration_service.expired?(name))
       Puppet.debug {"Evicting cache entry for environment '#{name}'"}
         @cache.delete(name)
+        @cache_conf.delete(name)
         @cache_expiration_service.evicted(name)
 
         Puppet.settings.clear_environment_settings(name)

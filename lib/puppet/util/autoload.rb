@@ -88,6 +88,8 @@ class Puppet::Util::Autoload
     end
 
     def files_to_load(path, env = nil)
+      # loadall is called when new module gets registered, reset dir cache in this case
+      @search_directories[env] = nil
       search_directories(env).map {|dir| files_in_dir(dir, path) }.flatten.uniq
     end
 
@@ -157,7 +159,17 @@ class Puppet::Util::Autoload
       gem_source.directories
     end
 
-    def search_directories(env)
+    def search_directories(env=nil)
+      @search_directories ||= {}
+      # cache only after initialization
+      if Puppet.settings.app_defaults_initialized?
+        @search_directories[env] ||= search_directories_uncached(env)
+      else
+        search_directories_uncached(env)
+      end
+    end
+
+    def search_directories_uncached(env)
       [gem_directories, module_directories(env), libdirs(), $LOAD_PATH].flatten
     end
 

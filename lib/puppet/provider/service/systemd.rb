@@ -9,10 +9,10 @@ Puppet::Type.type(:service).provide :systemd, :parent => :base do
 
   defaultfor :osfamily => [:archlinux]
   defaultfor :osfamily => :redhat, :operatingsystemmajrelease => "7"
-  defaultfor :osfamily => :redhat, :operatingsystem => :fedora
-  defaultfor :osfamily => :suse
+  defaultfor :osfamily => :redhat, :operatingsystem => :fedora, :operatingsystemmajrelease => ["17", "18", "19", "20", "21"]
+  defaultfor :osfamily => :suse, :operatingsystemmajrelease => ["12", "13"]
   defaultfor :operatingsystem => :debian, :operatingsystemmajrelease => "8"
-  defaultfor :operatingsystem => :ubuntu, :operatingsystemmajrelease => ["15.04","15.10"]
+  defaultfor :operatingsystem => :ubuntu, :operatingsystemmajrelease => ["15.04","15.10","16.04"]
 
   def self.instances
     i = []
