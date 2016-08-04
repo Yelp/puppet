@@ -543,7 +543,15 @@ class Puppet::Parser::Scope
 
   def qualified_scope(classname)
     raise "class #{classname} could not be found"     unless klass = find_hostclass(classname)
-    raise "class #{classname} has not been evaluated" unless kscope = class_scope(klass)
+    kscope = class_scope(klass)
+
+    # Generate temporary scope for hiera interpolation of class params
+    if !kscope && klass == resource.resource_type
+      kscope = newscope(source: self)
+      resource.keys.each { |k| kscope[k.to_s] = resource[k] }
+    end
+
+    raise "class #{classname} has not been evaluated" unless kscope
     kscope
   end
   private :qualified_scope
@@ -780,7 +788,7 @@ class Puppet::Parser::Scope
       new_ephemeral(true)
       match.each {|k,v| setvar(k, v, :file => file, :line => line, :ephemeral => true) }
       # Must always have an inner match data scope (that starts out as transparent)
-      # In 3x slightly wasteful, since a new nested scope is created for a match 
+      # In 3x slightly wasteful, since a new nested scope is created for a match
       # (TODO: Fix that problem)
       new_ephemeral(false)
     else
