@@ -86,12 +86,12 @@ module Puppet::DataProviders
           single_path = name if single_path.nil?
           original_paths = [single_path]
         end
-        paths = original_paths.map { |path| interpolate(path, lookup_invocation, false)}
         provider_name = he['backend']
         provider_factory = injector.lookup(nil, service_type, PATH_BASED_DATA_PROVIDER_FACTORIES_KEY)[provider_name]
         raise Puppet::DataBinding::LookupError, "#{@config_path}: No data provider is registered for backend '#{provider_name}' " unless provider_factory
 
         datadir = @config_root + (he['datadir'] || default_datadir)
+        paths = original_paths.map { |path| lambda { interpolate(path, lookup_invocation, false) } }
         resolved_paths = provider_factory.resolve_paths(datadir, original_paths, paths, lookup_invocation)
         data_providers[name] = provider_factory.create(name, resolved_paths)
       end
