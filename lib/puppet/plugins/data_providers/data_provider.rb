@@ -166,6 +166,8 @@ module Puppet::Plugins::DataProviders
   class LazilyResolvedPath < ResolvedPath
     attr_reader :interpolator, :original_path
 
+    MAGIC_PATH = ::Pathname.new("/magic/value/1PY8SqRph1o4B")
+
     def initialize(original_path, interpolator)
       @original_path = original_path
       @interpolator  = interpolator
@@ -180,10 +182,15 @@ module Puppet::Plugins::DataProviders
 
       if @interpolation_tries > 0
         # return non-existent path but don't cache it to retry next time
-        ::Pathname.new("/magic/value/1PY8SqRph1o4B")
+        MAGIC_PATH
       else
         raise err
       end
+    end
+
+    def exists?
+      # we don't want to cache false in @exists
+      super if path != MAGIC_PATH
     end
   end
 
