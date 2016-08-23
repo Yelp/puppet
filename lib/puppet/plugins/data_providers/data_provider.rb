@@ -171,19 +171,19 @@ module Puppet::Plugins::DataProviders
     def initialize(original_path, interpolator)
       @original_path = original_path
       @interpolator  = interpolator
-      @interpolation_tries = 10
+      @interpolation_tries = 1000
     end
 
     def path
       @path ||= interpolator.call
     rescue => err
-      Puppet.warning "Interpolation of #{@path} failed: #{err.message}"
       @interpolation_tries -= 1
 
       if @interpolation_tries > 0
         # return non-existent path but don't cache it to retry next time
         MAGIC_PATH
       else
+        Puppet.warning "Interpolation of #{@original_path} failed: #{err.message}"
         raise err
       end
     end
