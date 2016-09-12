@@ -175,7 +175,9 @@ module Puppet::Plugins::DataProviders
     end
 
     def path
-      @path ||= interpolator.call
+      @path ||= catch(:undefined_variable) { interpolator.call }
+      raise if @path.nil? # throw was invoked
+      @path
     rescue => err
       @interpolation_tries -= 1
 
