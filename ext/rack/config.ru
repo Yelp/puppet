@@ -14,7 +14,7 @@ ARGV << "--rack"
 # Rack applications typically don't start as root.  Set --confdir, --vardir,
 # --logdir, --rundir to prevent reading configuration from
 # ~/ based pathing.
-ARGV << "--confdir" << "/etc/puppetlabs/puppet"
+ARGV << "--confdir" << "/etc/puppet"
 ARGV << "--vardir"  << "/opt/puppetlabs/server/data/puppetmaster"
 ARGV << "--logdir"  << "/var/log/puppetlabs/puppetmaster"
 ARGV << "--rundir"  << "/var/run/puppetlabs/puppetmaster"

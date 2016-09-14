@@ -9,7 +9,7 @@
     <single_instance/>
 
     <dependency name="config-file" grouping="require_all" restart_on="none" type="path">
-      <service_fmri value="file:///etc/puppetlabs/puppet/puppet.conf"/>
+      <service_fmri value="file:///etc/puppet/puppet.conf"/>
     </dependency>
 
     <dependency name="loopback" grouping="require_all" restart_on="error" type="service">

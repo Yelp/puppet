@@ -25,7 +25,7 @@ config = Puppet::Util::Reference.newreference(:configuration, :depth => 1, :doc 
     if name.to_s == 'vardir'
       val = 'Unix/Linux: /opt/puppetlabs/puppet/cache -- Windows: C:\ProgramData\PuppetLabs\puppet\cache -- Non-root user: ~/.puppetlabs/opt/puppet/cache'
     elsif name.to_s == 'confdir'
-      val = 'Unix/Linux: /etc/puppetlabs/puppet -- Windows: C:\ProgramData\PuppetLabs\puppet\etc -- Non-root user: ~/.puppetlabs/etc/puppet'
+      val = 'Unix/Linux: /etc/puppet -- Windows: C:\ProgramData\PuppetLabs\puppet\etc -- Non-root user: ~/.puppetlabs/etc/puppet'
     elsif name.to_s == 'codedir'
       val = 'Unix/Linux: /etc/puppetlabs/code -- Windows: C:\ProgramData\PuppetLabs\code -- Non-root user: ~/.puppetlabs/etc/code'
     elsif name.to_s == 'rundir'

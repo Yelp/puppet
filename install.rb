@@ -171,7 +171,7 @@ def prepare_installation
     opts.on('--destdir[=OPTIONAL]', 'Installation prefix for all targets', 'Default essentially /') do |destdir|
       InstallOptions.destdir = destdir
     end
-    opts.on('--configdir[=OPTIONAL]', 'Installation directory for config files', 'Default /etc/puppetlabs/puppet') do |configdir|
+    opts.on('--configdir[=OPTIONAL]', 'Installation directory for config files', 'Default /etc/puppet') do |configdir|
       InstallOptions.configdir = configdir
     end
     opts.on('--codedir[=OPTIONAL]', 'Installation directory for code files', 'Default /etc/puppetlabs/code') do |codedir|
@@ -249,7 +249,7 @@ def prepare_installation
     end
     configdir = File.join(Dir::COMMON_APPDATA, "PuppetLabs", "puppet", "etc")
   else
-    configdir = "/etc/puppetlabs/puppet"
+    configdir = "/etc/puppet"
   end
 
   if not InstallOptions.codedir.nil?

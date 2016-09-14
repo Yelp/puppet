@@ -59,7 +59,7 @@ module Puppet
 
     class UnixRunMode < RunMode
       def conf_dir
-        which_dir("/etc/puppetlabs/puppet", "~/.puppetlabs/etc/puppet")
+        which_dir("/etc/puppet", "~/.puppetlabs/etc/puppet")
       end
 
       def code_dir

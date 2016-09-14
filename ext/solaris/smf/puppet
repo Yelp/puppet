@@ -4,7 +4,7 @@
 
 [ -z "${SMF_FMRI}" ] && exit $SMF_EXIT_ERR
 
-CONF_FILE=/etc/puppetlabs/puppet/puppet.conf
+CONF_FILE=/etc/puppet/puppet.conf
 [ ! -f "${CONF_FILE}" ] && exit $SMF_EXIT_ERR_CONFIG
 
 PUPPET=/opt/puppetlabs/bin/puppet
