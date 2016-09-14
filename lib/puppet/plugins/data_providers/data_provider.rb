@@ -169,8 +169,41 @@ module Puppet::Plugins::DataProviders
     # @return [Boolean] cached info if the path exists or not
     # @api public
     def exists?
-      @exists = @path.exist? if @exists.nil?
+      @exists = path.exist? if @exists.nil?
       @exists
+    end
+  end
+
+  class LazilyResolvedPath < ResolvedPath
+    attr_reader :interpolator, :original_path
+
+    MAGIC_PATH = ::Pathname.new("/magic/value/1PY8SqRph1o4B")
+
+    def initialize(original_path, interpolator)
+      @original_path = original_path
+      @interpolator  = interpolator
+      @interpolation_tries = 1000
+    end
+
+    def path
+      @path ||= catch(:undefined_variable) { interpolator.call }
+      raise if @path.nil? # throw was invoked
+      @path
+    rescue => err
+      @interpolation_tries -= 1
+
+      if @interpolation_tries > 0
+        # return non-existent path but don't cache it to retry next time
+        MAGIC_PATH
+      else
+        Puppet.warning "Interpolation of #{@original_path} failed: #{err.message}"
+        raise err
+      end
+    end
+
+    def exists?
+      # we don't want to cache false in @exists
+      super if path != MAGIC_PATH
     end
   end
 
@@ -316,13 +349,18 @@ module Puppet::Plugins::DataProviders
     # @param paths [Array<String>] paths that have been preprocessed (interpolations resolved)
     # @param lookup_invocation [Puppet::Pops::Lookup::Invocation] The current lookup invocation
     # @return [Array<ResolvedPath>] Array of resolved paths
-    def resolve_paths(datadir, declared_paths, paths, lookup_invocation)
+    def resolve_paths(datadir, declared_paths, paths, _)
       resolved_paths = []
       unless paths.nil? || datadir.nil?
         ext = path_extension
         paths.each_with_index do |path, idx|
-          path = path + ext unless path.end_with?(ext)
-          resolved_paths << ResolvedPath.new(declared_paths[idx], datadir + path)
+          resolved_paths << LazilyResolvedPath.new(
+            declared_paths[idx],
+            lambda do
+              resolved_path = path.respond_to?(:call) ? path.call : path
+              resolved_path << ext unless resolved_path.end_with? ext
+              datadir + resolved_path
+            end)
         end
       end
       resolved_paths

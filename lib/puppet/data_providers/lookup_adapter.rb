@@ -97,18 +97,24 @@ class Puppet::DataProviders::LookupAdapter < Puppet::DataProviders::DataAdapter
 
   # @api private
   def lookup_in_module(name, lookup_invocation, merge_strategy)
-    module_name = lookup_invocation.module_name || extract_module_name(name)
+    module_names = [ lookup_invocation.module_name,
+                     lookup_invocation.scope.source.module_name,
+                     extract_module_name(name) ].compact
 
     # Do not attempt to do a lookup in a module unless the name is qualified.
-    throw :no_such_key if module_name.nil?
+    throw :no_such_key if module_names.empty?
 
-    lookup_invocation.with(:module, module_name) do
-      if environment.module(module_name).nil?
-        lookup_invocation.report_module_not_found
-        throw :no_such_key
+    module_names.each do |module_name|
+      lookup_invocation.with(:module, module_name) do
+        next if environment.module(module_name).nil?
+
+        catch(:no_such_key) do
+          return module_provider(module_name).lookup(name, lookup_invocation, merge_strategy)
+        end
       end
-      module_provider(module_name).lookup(name, lookup_invocation, merge_strategy)
     end
+
+    throw :no_such_key
   end
 
   # Retrieve the merge options that match the given `name`.
