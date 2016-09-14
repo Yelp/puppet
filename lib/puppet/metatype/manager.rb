@@ -151,9 +151,7 @@ module Manager
   #
   def type(name)
     # Avoid loading if name obviously is not a type name
-    if name.to_s.include?(':')
-      return nil
-    end
+    return nil if name.to_s.include? ':'
 
     @types ||= {}
 
@@ -176,7 +174,7 @@ module Manager
     end
 
     # ...and I guess that is that, eh.
-    return @types[name]
+    @types[name]
   end
 
   # Creates a loader for Puppet types.
@@ -192,4 +190,3 @@ module Manager
   end
 end
 end
-

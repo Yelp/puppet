@@ -1562,6 +1562,16 @@ EOT
       :type     => :boolean,
       :desc     => "Whether to send reports after every transaction.",
     },
+    :report_terminus => {
+      :default  => :rest,
+      :type     => :string,
+      :desc     => "Which terminus should handle sending reports. rest/yaml/false."
+    },
+    :report_cache_terminus => {
+      :default  => :yaml,
+      :type     => :string,
+      :desc     => "Which terminus should handle caching of report after sending. yaml/false."
+    },
     :lastrunfile =>  {
       :default  => "$statedir/last_run_summary.yaml",
       :type     => :file,
