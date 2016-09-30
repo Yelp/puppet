@@ -80,7 +80,9 @@ module Interpolation
               if defaults.include?(key)
                 lookup_invocation.report_found_in_defaults(key, defaults[key])
               else
-                nil
+                # defaulting to empty strings when interpolating hiera paths seems
+                # weird.
+                throw :undefined_variable
               end
             end
           end
