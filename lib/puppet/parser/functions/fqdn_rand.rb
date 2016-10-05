@@ -1,5 +1,6 @@
 require 'digest/md5'
 
+FQDN_RAND_45 = !!Facter.value('fqdn_rand_45')
 Puppet::Parser::Functions::newfunction(:fqdn_rand, :arity => -2, :type => :rvalue, :doc =>
   "Usage: `fqdn_rand(MAX, [SEED])`. MAX is required and must be a positive
   integer; SEED is optional and may be any number or string.
@@ -15,7 +16,8 @@ Puppet::Parser::Functions::newfunction(:fqdn_rand, :arity => -2, :type => :rvalu
   have more than one such task and need several unrelated random numbers per
   node. (For example, `fqdn_rand(30)`, `fqdn_rand(30, 'expensive job 1')`, and
   `fqdn_rand(30, 'expensive job 2')` will produce totally different numbers.)") do |args|
-    max = args.shift.to_i
-    seed = Digest::MD5.hexdigest([self['::fqdn'],max,args].join(':')).hex
+    max       = args.shift.to_i
+    to_digest = FQDN_RAND_45 ? [self['::fqdn'],max,args] : [self['::fqdn'],args]
+    seed      = Digest::MD5.hexdigest(to_digest.join(':')).hex
     Puppet::Util.deterministic_rand_int(seed,max)
 end
