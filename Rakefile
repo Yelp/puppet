@@ -49,6 +49,10 @@ if File.exist?(build_defs_file)
       else
         cd 'ext' do
           %x{git clone #{@packaging_url}}
+          cd 'packaging' do
+            # Newer releases of the puppetlabs packaging repo get rid of package:gem
+            %x{git checkout 0.99.30}
+          end
         end
       end
     end
